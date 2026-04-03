@@ -26,34 +26,8 @@ p_round <- function(x) {
   }
   # removes leading zero. Install weights package if needed
 }
-p_round(0.42)
-#format(round(.42753, 3), nsmall=3, digits=3, trim=T)
-p_round(c(1,2,3, .0004))
-p_round(0.0001)
-p_round(0000.0000)
-p_round(1)
 
-chad <- function(x, y) {
-  a <- cor(x, use = "pairwise")
-  b <- range(x, na.rm = T)
-  c <- psych::alpha(x, check.keys = T)
-  d <- psych::alpha(x, check.keys = T)$scores
-  e <- shapiro.test(d)
-  f <- data.frame(d)
-  g <- ggplot2::ggplot(f, aes(x=d)) + 
-    geom_histogram(aes(y=after_stat(density))) +
-    geom_density(adjust=1,kernel="gaussian",na.rm=TRUE,
-                 color="red" ,linewidth = .5) + 
-    stat_function(fun = dnorm, 
-                  args = list(mean = mean(f$d,na.rm=TRUE),
-                              sd = sd(f$d,na.rm=TRUE)), 
-                  linewidth = 1, 
-                  color = "blue") +
-    theme_bw()
-  return(list("Scores"=d, "Cor"=a, "ALpha"=c, "Range"=b, "Normality"=e, suppressWarnings(g)))
-}
-
-# make a condition version. Reliable in each condition? And maybe missing data one. 
+# make a condition version. Reliability in each condition. And maybe missing data one. 
 meas <- function(x) {
   a <- cor(x, use = "pairwise")
   b <- range(x, na.rm = T)
