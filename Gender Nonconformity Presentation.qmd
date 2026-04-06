@@ -1,0 +1,583 @@
+---
+title: "Gender Nonconformity Presentation"
+editor: visual
+format:
+  revealjs:
+    scrollable: true
+    incremental: false
+    code-fold: false
+    echo: false
+---
+
+
+```{r, include=FALSE}
+source("https://raw.githubusercontent.com/chadmillerror/Gender-Nonconformity/refs/heads/main/Functions.R")
+library(qualtRics)
+library(psych)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(rstatix)
+library(ggplot2)
+source("https://raw.githubusercontent.com/easystats/see/5abfdf1224ed2309cabddf7322dafabb03814d82/R/geom_violinhalf.R")
+a_all <- read.csv("https://raw.githubusercontent.com/chadmillerror/Gender-Nonconformity/refs/heads/main/Gender%20Nonconformity_May%207%2C%202025_12.22.csv", skip=3, header=F)
+colnames(a_all) <- read.csv("https://raw.githubusercontent.com/chadmillerror/Gender-Nonconformity/refs/heads/main/Gender%20Nonconformity_May%207%2C%202025_12.22.csv", header = F)[1,]
+a_all$Condition <- relevel(factor(dplyr::case_when(a_all$FL_20_DO_FL_23 == 1 ~ "Trans",
+                 a_all$FL_20_DO_FL_24 == 1 ~ "Gay",
+                 a_all$FL_20_DO_FL_25 == 1 ~ "Unspecified",
+                 a_all$FL_20_DO_FL_26 == 1 ~ "Straight"), levels = c("Unspecified", "Straight", "Gay", "Trans"), 
+                 labels = c("Unspecified", "Straight", "Gay", "Trans")), ref = "Unspecified")
+a_all$Condition_Gay <- a_all$Condition |> relevel(ref = "Gay")
+a_all$Condition_Trans <- a_all$Condition |> relevel(ref = "Trans")
+a_all$Condition_Straight <- a_all$Condition |> relevel(ref = "Straight")
+a <- subset(a_all, Gender < 3 & Sexual_Orientation == 1 & Trans == 0)
+a$ID <- 1:nrow(a)
+a$PGender <- ifelse(a$Gender==1, "Woman", "Man")
+
+a$femmen <- a |> dplyr::select(femmen_1, transfemmen_1, gayfemmen_1, hetfemmen_1) |> rowMeans(, na.rm = T)
+a$femwomen <- a |> dplyr::select(femwomen_1, transfemwomen_1, gayfemwomen_1, hetfemwomen_1) |> rowMeans(, na.rm = T)
+a$mascmen <- a |> dplyr::select(mascmen_1, transmascmen_1, gaymascmen_1, hetmascmen_1) |> rowMeans(, na.rm = T)
+a$mascwomen <- a |> dplyr::select(mascwomen_1, transmascwomen_1, gaymascwomen_1, hetmascwomen_1) |> rowMeans(, na.rm = T)
+
+a$menmasc <- a |> dplyr::select(Mmasc, HMmasc, GMmasc, TMmasc) |> rowMeans(, na.rm = T)
+a$womenmasc <- a |> dplyr::select(Wmasc, HWmasc, GWmasc, TWmasc) |> rowMeans(, na.rm = T)
+a$menfem <- a |> dplyr::select(Mfem, HMfem, GMfem, TMfem) |> rowMeans(, na.rm = T)
+a$womenfem <- a |> dplyr::select(Wfem, HWfem, GWfem, TWfem) |> rowMeans(, na.rm = T)
+
+a$menstereotypical <- rowMeans(data.frame(a$menmasc, abs(a$menfem-8)), na.rm=T)
+a$womenstereotypical <- rowMeans(data.frame(a$womenfem, abs(a$womenmasc-8)), na.rm=T)
+
+a$femmen2gay <- a |> dplyr::select(FM2G, FHM2G, FTM2G) |> rowMeans(, na.rm = T)
+a$femwomen2gay <- a |> dplyr::select(FW2G, FHW2G, FTW2G) |> rowMeans(, na.rm = T)
+a$mascmen2gay <- a |> dplyr::select(MM2G, MHM2G, MTM2G) |> rowMeans(, na.rm = T)
+a$mascwomen2gay <- a |> dplyr::select(MW2G, MHW2G, MTW2G) |> rowMeans(, na.rm = T)
+
+a$femmen2trans <- a |> dplyr::select(FM2T, FHM2T, FGM2T) |> rowMeans(, na.rm = T)
+a$femwomen2trans <- a |> dplyr::select(FW2T, FHW2T, FGW2T) |> rowMeans(, na.rm = T)
+a$mascmen2trans <- a |> dplyr::select(MM2T, MHM2T, MGM2T) |> rowMeans(, na.rm = T)
+a$mascwomen2trans <- a |> dplyr::select(MW2T, MHW2T, MGW2T) |> rowMeans(, na.rm = T)
+
+# The following are coded as 1 only if trans men are considered men and trans women considered to be women and 0 otherwise
+a$TMAcceptance <- ifelse(a$transmenacceptance == 1, 1, 0)
+a$TWAcceptance <- ifelse(a$transwomenacceptance == 2, 1, 0)
+# The following are coded as 0 only if ps consider trans men as women and trans women as men. 
+# Answers like "other" and "it depends" are disregarded, not treated as 0
+a$TMAcceptance2 <- case_when(a$transmenacceptance == 1 ~ 1,
+                             a$transmenacceptance == 2 ~ 0,
+                             a$transmenacceptance == 3 ~ NA,
+                             a$transmenacceptance == 4 ~ NA)
+                             
+a$TWAcceptance2 <- case_when(a$transwomenacceptance == 2 ~ 1,
+                             a$transwomenacceptance == 1 ~ 0,
+                             a$transwomenacceptance == 3 ~ NA,
+                             a$transwomenacceptance == 4 ~ NA)
+library(tidyr)
+al <- a |> pivot_longer(cols = c(femmen, femwomen, mascmen, mascwomen), values_to = "warmth")
+al$nonconforming <- ifelse(al$name=="femmen" | al$name=="mascwomen", 1,0)
+al$feminine <- ifelse(al$name=="femmen" | al$name=="femwomen", 1,0)
+al$tmen <- ifelse(al$name=="femmen" | al$name=="mascmen", 1,0)
+al$twomen <- ifelse(al$name=="femmen" | al$name=="mascmen", 0,1)
+al$stereotypical <- ifelse(al$name=="femmen" | al$name=="mascmen", al$menstereotypical, al$womenstereotypical)
+al$TransgenderAcceptance <- ifelse(al$name=="femmen" | al$name=="mascmen", al$TMAcceptance, al$TWAcceptance)
+al$TransgenderAcceptance2 <- ifelse(al$name=="femmen" | al$name=="mascmen", al$TMAcceptance2, al$TWAcceptance2)
+# How likely are targets to eventually identify as gay and trans, respectively
+al$likelihoodgay <- case_when(al$name=="femmen" ~ al$femmen2gay,
+                             al$name=="femwomen" ~ al$femwomen2gay,
+                             al$name=="mascmen" ~ al$mascmen2gay,
+                             al$name=="mascwomen" ~ al$mascwomen2gay)
+al$likelihoodtrans <- case_when(al$name=="femmen" ~ al$femmen2trans,
+                              al$name=="femwomen" ~ al$femwomen2trans,
+                              al$name=="mascmen" ~ al$mascmen2trans,
+                              al$name=="mascwomen" ~ al$mascwomen2trans)
+library(lme4)
+library(lmerTest)
+```
+
+::: scrollable
+## Gender Nonconformity is Disliked
+
+-   Men are expected to be masculine and engage in masculine behaviors whereas women are expected to be feminine and engage in feminine behaviors and face backlash for violating these expectations
+-   E.g., while the majority of children hold egalitarian views about gender nonconforming people[^1], children still avoid their gender nonconforming peers[^2]
+-   Boys may face more prejudice for nonconformity[^3]
+-   and especially from men[^4]
+:::
+
+[^1]: Carter & McCloskey, 1983; Killen & Stangor, 2001; Theimer et al., 2001
+
+[^2]: Carter & McCloskey, 1983
+
+[^3]: Fagot, 1977; van Beusekom et al., 2020
+
+[^4]: D’Augelli et al., 2006
+
+## Gender Nonconformity is Disliked
+
+### But Why?
+
+1.  People just dislike gender nonconformity for it's own sake
+2.  People dislike gay and transgender people
+    -   gender nonconforming people are more likely to be\[come\] gay or transgender,
+        -   so people dislike gender nonconformity
+
+-   Both are likely true to some extent, but each make unique predictions
+
+------------------------------------------------------------------------
+
+## Predictions
+
+```{r}
+library(ggplot2)
+ggplot(data.frame("means"=c(5,4,3,2,
+                     5,3,3,3,
+                     5,3,3,2), "group"=factor(rep(c("People", "Gay people"), each=2), levels=c("People", "Gay people")),
+           "conforming"=rep(c("Conforming", "Nonconforming")),
+           "hyp"=factor(rep(c("Nonconformity\nDisliked", "LGBT\nDisliked", "Both True"), each=4), levels=c("Nonconformity\nDisliked", "LGBT\nDisliked", "Both True"))), aes(x=group, colour = conforming, 
+                                                                                     y=means, fill = conforming)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  jtools::theme_apa() +
+  ylab("Liking") +
+  xlab("Target") +
+  facet_wrap(~hyp)
+```
+
+::: scrollable
+## Project Goals
+
+-   Aim 1: Characterize Gender Nonconformity Bias
+    -   Determine the extent to which people dislike gender nonconformity
+    -   Determine what groups are most likely to face bias for nonconformity
+-   Aim 2: Identify factors that reduce anti-nonconformity bias and explain differences between groups
+    -   Test whether gender nonconformity bias occurs because targets are perceived as likely to become gay or trans
+    -   Test whether groups that are perceived as generally being conforming are subject to harsher punishment for nonconformity
+- Preregistration: https://osf.io/sxnwm/overview?view_only=b0ff3d3df24e47e7bdaee6fe31b7020f
+:::
+
+------------------------------------------------------------------------
+
+## Experiment Overview
+
+-   998 cisgender, heterosexual participants (*M~age~* = 38.15, *SD~age~* = 13.62, 44.79% female, 71.24% U.S.) assigned to evaluate one of four target identity groups:
+    (1) Heterosexual Targets, (2) Gay Targets, (3) Transgender Targets, and (4) Unspecified Targets (no label)
+-   and reported liking of four targets from their assigned group:
+    -   [feminine \[target group\] men]{style="color:cornflowerblue"}
+    -   [feminine \[target group\] women]{style="color:goldenrod"}
+    -   [masculine \[target group\] men]{style="color:goldenrod"}
+    -   [masculine \[target group\] women]{style="color:cornflowerblue"}
+
+------------------------------------------------------------------------
+
+::: scrollable
+```{mermaid}
+flowchart LR
+  A[Target Group] --> B[Men]
+  A--> C[Women]
+  B--> D[Feminine]
+  C--> F[Feminine]
+  B--> E[Masculine]
+  C--> G[Masculine]
+```
+
+-   4 (Target Identity) x 2 (Target Gender: Men, Women) x *2 (Target Nonconformity: Nonconforming, Conforming)*
+:::
+
+------------------------------------------------------------------------
+
+### DV
+
+-   Warmth toward target (Measured from 0-Very cold or unfavorable feeling to 100-Very warm of favorable feeling)
+
+### Analysis
+
+-   Multilevel modeling with a random intercept with target group as a level two factor and target gender and target nonconformity as level one fixed factors. Two and three way interactions are included
+-   Unless target gender differences are plotted, effects are averaged across target gender (i.e., target gender is coded as -.5 and .5)
+
+------------------------------------------------------------------------
+
+## Gender Nonconformists are Derogated
+
+```{r}
+library(lme4)
+mod <- lmer(warmth ~ Condition*nonconforming*tmen + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 4), "Condition"=factor(rep(c("Unspecified", "Straight", "Gay", "Trans"), each=2), levels =c("Unspecified", "Straight", "Gay", "Trans")),
+                                "tmen"=rep(c(.5), 8))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+dat4later <- dat
+ggplot(dat, aes(x=Nonconformity, y=fit, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit),linetype=c(1,2,1,2,1,2,1,1)) +
+  ylab("Warmth") +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition) 
+```
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+:::
+
+::: {style="font-size: 50%;"}
+-   Gay, straight, and people without sexuality/transgender labels are derogated for nonconformity (vs. conformity)
+-   All interactions between target group and nonconformity are significant except for the gay and transgender comparison
+:::
+
+------------------------------------------------------------------------
+
+## Men and \[Especially\] Women are Derogated for Nonconformity
+
+```{r}
+mod <- lmer(warmth ~ Condition*nonconforming*tmen + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 8), "Condition"=factor(rep(c("Unspecified", "Straight", "Gay", "Trans"), each=4), levels =c("Unspecified", "Straight", "Gay", "Trans")),
+                                "tmen"=rep(c(0,0,1,1), 4))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"), "Target_Gender"=ifelse(newdat$tmen==0, "Women", "Men"))
+#dat$Condition2 <- factor(dat$Condition, labels = c("Unspecified", "Heterosexual", "Gay", "Transgender"))
+ggplot(dat, aes(x=Target_Gender, y=fit, group=Nonconformity, fill = Nonconformity)) +
+  geom_bar(stat="identity", position = "dodge") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit), position = "dodge", linetype=c(1,2,1,2,1,2,1,2,1,2,1,1,1,1,1,1),
+                color=rep(c("firebrick4", "black"),each=8)) +
+  ylab("Warmth") +
+  xlab("Target Gender") +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  theme(axis.text.y=element_text(size=7)) +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition)
+```
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+
+red error bars indicate that the effect of nonconformity significantly differs depending on target gender
+:::
+
+------------------------------------------------------------------------
+
+```{r}
+al$Nonconformity <- factor(ifelse(al$nonconforming==1, "Nonconforming", "Conforming"), levels = c("Conforming", "Nonconforming"))
+al$'TargetGender' <- factor(ifelse(al$tmen==1, "Men", "Women"))
+al2  <- subset(al, !is.na(Condition))
+ggplot(al2, aes(x=TargetGender, y=warmth, fill = Nonconformity)) +
+  geom_violinhalf() + 
+    ylab("Warmth") +
+  xlab("Target Gender") +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  theme(axis.text.y=element_text(size=7)) +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition)
+```
+::: {style="font-size: 50%;"}
+-   Same information as previous plot, but this is the only opportunity to show the distributions (because the other plots average across target gender and thus there is no distribution to show)
+:::
+
+------------------------------------------------------------------------
+
+## Why are there condition differences in attitudes toward nonconformity?
+
+1.  Nonconformity may signal LGBTQ identification for some groups more than others
+
+::: {style="font-size: 50%;"}
+-   To examine this hypothesis, I measured perceptions of how likely each target (e.g., feminine gay men) is to currently or eventually identify as gay or as transgender
+:::
+
+------------------------------------------------------------------------
+
+## Which group is most susceptible to becoming gay or trans?
+
+```{r}
+library(lme4)
+mod <- lmer(likelihoodgay ~ Condition*nonconforming*tmen + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 2), "Condition"=factor(rep(c("Unspecified", "Straight"), each=2), levels =c("Unspecified", "Straight")),
+                                "tmen"=rep(c(.5), 4))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+ggplot(dat, aes(x=Nonconformity, y=fit, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit), linetype=c(1,2,1,2)) +
+  ylab("Likelihood of Becoming Gay") +
+      scale_y_continuous(breaks = seq(1,7,1), labels=c("Not", as.character(seq(2,6,1)), "Very"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(1,7)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition)
+```
+
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+:::
+
+::: {style="font-size: 50%;"}
+-   Contrary to expectations (and intentions), nonconforming targets specified to be straight are considered more likely to come out as gay than conforming straight targets, and the effect of nonconformity for straight targets is not significantly smaller than for unspecified targets
+:::
+
+```{r}
+library(lme4)
+mod <- lmer(likelihoodtrans ~ Condition*nonconforming*tmen + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 3), "Condition"=factor(rep(c("Unspecified", "Straight", "Gay"), each=2), levels =c("Unspecified", "Straight", "Gay")),
+                                "tmen"=rep(c(.5), 6))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+ggplot(dat, aes(x=Nonconformity, y=fit, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit), linetype=c(1,2,1,2,1,2)) +
+  ylab("Likelihood of Becoming Transgender") +
+      scale_y_continuous(breaks = seq(1,7,1), labels=c("Not", as.character(seq(2,6,1)), "Very"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(1,7)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition)
+```
+
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+:::
+
+::: {style="font-size: 50%;"}
+-   Nonconformity indicates increased likelihood of identifying as transgender for all conditions, but the effect is significantly smaller for gay targets compared to the other conditions
+:::
+
+------------------------------------------------------------------------
+
+## Testing for Mediation
+
+```{r}
+mod <- lmer(warmth ~ Condition*nonconforming*tmen + likelihoodgay + likelihoodtrans + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 2), "Condition"=factor(rep(c("Unspecified", "Straight"), each=2), levels =c("Unspecified", "Straight")), "likelihoodtrans"=c(mean(al$likelihoodtrans, na.rm=T)),                "likelihoodgay"=c(mean(al$likelihoodgay, na.rm=T)),
+                                "tmen"=rep(c(.5), 4))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+ggplot(dat, aes(x=Nonconformity, y=fit, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit), linetype=c(1,2,1,2)) +
+  ylab("Warmth") +
+  geom_point(x=dat4later$Nonconformity[1:4], y=dat4later$fit[1:4], size=1.2) +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition) +
+  ggtitle("Effect of Nonconformity and Condition\n-Controlling for Likelihood of\n Being Trans and Gay")
+```
+
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+
+dots reflect the original estimates before controlling for likelihood of gay/trans identification
+:::
+
+::: {style="font-size: 50%;"}
+-   Unspecifieds face more gender nonconformity bias than heterosexuals, but this is not mediated by perceived likelihood of them being/becoming gay or trans
+-   The effect of nonconformity for both target groups is mediated by gay and trans likelihood, but the effect reduction is small
+:::
+
+```{r}
+mod <- lmer(warmth ~ Condition*nonconforming*tmen + likelihoodtrans + (1 | ID), data = al)
+newdat <- data.frame("nonconforming"=rep(c(0,1), 3), "Condition"=factor(rep(c("Unspecified", "Straight", "Gay"), each=2), levels =c("Unspecified", "Straight", "Gay")), "likelihoodtrans"=c(mean(al$likelihoodtrans, na.rm=T)),  "tmen"=c(.5))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+ggplot(dat, aes(x=Nonconformity, y=fit, group=Nonconformity, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit), linetype=c(1,2,1,2,1,2)) +
+  ylab("Warmth") +
+  geom_point(x=dat4later$Nonconformity[1:6], y=dat4later$fit[1:6], size=1.2) +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  facet_wrap(~Condition) +
+  ggtitle("Effect of Nonconformity and Condition\n-Controlling for Likelihood of\n Being Trans")
+```
+
+::: {style="font-size: 30%;"}
+distinct line types indicate significant effects of nonconformity
+
+dots reflect the original estimates before controlling for likelihood of trans identification
+:::
+
+::: {style="font-size: 50%;"}
+-   Heterosexuals and Unspecifieds face more gender nonconformity bias than Gays, and this *is* mediated by perceived likelihood of being/becoming trans
+-   The effect of nonconformity for all target groups is mediated by trans likelihood
+-   But mediation effects are small
+:::
+
+------------------------------------------------------------------------
+
+## Why are there condition differences in attitudes toward nonconformity?
+
+1.  Nonconformity may signal LGBTQ identification for some groups more than others
+2.  **Groups who are more stereotypically gender conforming may face more backlash for nonconformity**
+
+::: {style="font-size: 50%;"}
+-   ^Potentially because nonconformity without an "excuse" may indicate that an individual is generally odd
+
+-   To examine this hypothesis, I measured how masculine and feminine the overall target group men and women are (e.g., "On average, how masculine do you think gay men are?" and "On average, how feminine do you think gay men are"). After reverse coding the nonconforming question, the two are averaged.
+:::
+
+------------------------------------------------------------------------
+
+## Testing for [Moderated] Mediation
+
+```{r}
+mod <- lmer(warmth ~ Condition*nonconforming*tmen*stereotypical+ (1 | ID), data = al)
+newdat <- expand.grid(nonconforming=c(0,1), Condition=c("Unspecified", "Straight", "Gay", "Trans"), tmen=c(.5), stereotypical=seq(min(al$stereotypical, na.rm = T), max(al$stereotypical, na.rm=T), .01))
+newdat$Condition <- factor(newdat$Condition, levels =c("Unspecified", "Straight", "Gay", "Trans"))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+al$nonconformingf <- ifelse(al$nonconforming==0, "Conforming", "Nonconforming") |> as.factor()
+linedata <- data.frame("means"=tapply(al$stereotypical, al$Condition, mean, na.rm=T), "Condition"=factor(levels(al$Condition), levels = levels(al$Condition)))
+ggplot(dat, aes(x=stereotypical, y=fit, fill=Nonconformity)) +
+  geom_line() +
+  geom_ribbon(aes(ymin=fit-se.fit, ymax=fit+se.fit)) +
+    scale_x_continuous(name="On average, how gender conforming is target group?", breaks = c(1:7), 
+                     labels=c("1\nNot\nVery", "2", "3", "4", "5", "6", "7\nVery\nConforming"), 
+                     expand = c(0,.6)) +
+  geom_vline(xintercept = mean(tapply(al$stereotypical, al$Condition, mean, na.rm=T)), inherit.aes = F, linetype="dashed") +
+  ylab("Warmth") +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  #geom_point(data = al, aes(x = stereotypical, y = warmth, color=nonconformingf), inherit.aes = F, size=.2) +
+  facet_wrap(~Condition) +
+    geom_vline(data = linedata, aes(xintercept = means), inherit.aes = F) 
+```
+
+::: {style="font-size: 30%;"}
+vertical solid lines indicate mean conformity for each target group, and dashed lines indicate the mean of the group means
+:::
+
+::: {style="font-size: 40%;"}
+-   Unspecified and Straight targets faced more prejudice for nonconformity than Gay and Trans targets, but when holding stereotypical conformity constant at the grand mean, group differences were significantly reduced
+-   However, this doesn't explain why only Unspecified and Straight targets yield the interaction between target nonconformity and target group conformity
+-   There are ideological differences in how participants perceive overall group conformity, and the pattern differs depending on the target group, which complicates this analysis
+:::
+
+------------------------------------------------------------------------
+
+## Summary
+
+-   Heterosexuals, gays, and unspecifieds face backlash for gender nonconformity
+-   Counter to predictions, women face more backlash for being masculine than men for being feminine
+    -   so much so that gay men don't face significant backlash
+-   Unspecifieds face the most backlash for gender nonconformity, significantly more than heterosexuals
+    -   heterosexuals face significantly more than gays
+        -   trans targets don't face significant nonconformity bias, and this isn't moderated by whether their identity is accepted or not
+
+------------------------------------------------------------------------
+
+## Why Do Big Group Differences and Nonconformity Effects Persist? Several Alternative/Coinciding Interpretations to Explore
+
+-   Are masculine gay men and feminine lesbians actually perceived as masculine/feminine as their straight counterparts?
+    -   perhaps the feminine/masculine descriptors are differentially effective for each target group
+        -   might need to manipulate masculine vs. feminine behaviors/appearances to convincingly manipulate gender nonconformity
+
+## The end: featuring an exploratory plot
+
+```{r}
+al$Conservatism_s <- scale(al$Conservatism)
+mod <- lmer(warmth ~ Condition*nonconforming*tmen*Conservatism_s + (1 | ID), data = al)
+
+newdat <- expand.grid(nonconforming=c(0,1), Condition=c("Unspecified", "Straight", "Gay", "Trans"), tmen=c(.5), Conservatism_s=c(-1,0,1))
+newdat$Condition <- factor(newdat$Condition, levels =c("Unspecified", "Straight", "Gay", "Trans"))
+dat <- data.frame(predict(mod, newdata=newdat, re.form=NA, se.fit=T), newdat, "Nonconformity"=ifelse(newdat$nonconforming==0, "Conforming", "Nonconforming"))
+dat$Conservatism_sf <- factor(dplyr::case_when(dat$Conservatism_s==1~"Conservative (+1SD)",
+                 dat$Conservatism_s==0~"Moderate (Mean)",
+                 dat$Conservatism_s==-1~"Liberal (-1SD)"), levels = c("Liberal (-1SD)",
+                                                                     "Moderate (Mean)",
+                                                                     "Conservative (+1SD)"))
+ggplot(dat, aes(x=Nonconformity, y=fit, fill=Nonconformity)) +
+  geom_bar(stat="identity") + 
+  geom_errorbar(aes(ymin=fit-se.fit, ymax=fit+se.fit)) +
+  ylab("Warmth") +
+      scale_y_continuous(breaks = seq(0,100,10), labels=c("Cold", as.character(seq(10,90,10)), "Warm"), expand = c(0,0)) +
+  coord_cartesian(ylim=c(0,100)) +
+  theme_bw() +
+  scale_fill_manual(values = c("goldenrod", "cornflowerblue")) +
+  theme(axis.text.x=element_blank(), axis.text.y = element_text(size = 7)) +
+  facet_grid(rows=vars(Conservatism_sf), cols=vars(Condition))
+```
+
+::: {style="font-size: 40%;"}
+The "nonconformists are derogated because they may come out as gay or trans" hypothesis may be more apt for conservatives and the "nonconformists are derogated because they act nonstereotypically" hypothesis may be more apt for liberals. Worth attempting to replicate.
+
+Moreover, conservatives may dislike gender nonconformity because it indicates liberal or non-religious/non-traditional values. For gay and transgender targets, they are likely presumed as liberal and non-religious regardless of how feminine/masculine they are.
+:::
+
+```{r, eval=FALSE}
+# Mediation Code for full model
+## This method is more time intensive but less error prone
+## Lavaan works too, but you can't bootstrap while maintaining the hierarchical structure
+library(doParallel)
+times <- 1e4
+num_cores <- detectCores()
+use_cores <- num_cores-1
+cl<-makeCluster(use_cores)
+registerDoParallel(cl)
+TP <- proc.time()
+matcolnames <- c("Het vs. Unspecified-Gay likelihood", "Het vs. Unspecified-Trans likelihood", 
+                 "Het vs. Gay-Trans likelihood", "Unspecified vs. Gay- Trans likelihood",
+                 "Unspecified vs. Trans - Gay likelihood",
+                 "Het vs. Trans - Gay likelihood",
+                 "Het vs. Unspecified-Gay and Trans likilihood", 
+                 "Unspecified Nonconformity contr. Gay likelihood", "Unspecified Nonconformity contr. Trans likelihood",
+                 "Unspecified Nonconformity contr. Gay+Trans likelihood", "Het Nonconformity contr. Gay likelihood", 
+                 "Het Nonconformity contr. Trans likelihood",
+                 "Het Nonconformity contr. Gay+Trans likelihood",
+                 "Gay Nonconformity contr. Trans",
+                 "Het vs. Unspecified-stereotypical", "Unspecified vs. Gay-stereotypical", 
+                 "Het vs. Gay-stereotypical",
+                 "Unspecified Nonconformity contr. stereotypical",
+                 "Het Nonconformity contr. stereotypical",
+                 "Gay Nonconformity contr. stereotypical"
+)
+mat <- matrix(NA, ncol = length(matcolnames), nrow = times)
+mat <- foreach(i=1:times, .combine=rbind, 
+                       .packages = c("tidyr", "lme4", "lmerTest", "dplyr")
+) %dopar%  {
+  newid <- sample(a$ID, length(a$ID), replace = T)
+  newidrow <- c(newid*4-3, newid*4-2, newid*4-1, newid*4)
+  al2 <- al[newidrow,]
+  effs1 <- fixef(lmer(warmth ~ Condition*nonconforming*I(tmen-.5) + (1 | ID), data = al2))
+  effs2 <- fixef(lmer(warmth ~ Condition*nonconforming*I(tmen-.5) + scale(likelihoodgay) + (1 | ID), data = al2))
+  effs3 <- fixef(lmer(warmth ~ Condition_Straight*nonconforming*I(tmen-.5) + (1 | ID), data = al2))
+  effs4 <- fixef(lmer(warmth ~ Condition*nonconforming*I(tmen-.5) + scale(likelihoodtrans) + (1 | ID), data = al2))
+  effs5 <- fixef(lmer(warmth ~ Condition_Straight*nonconforming*I(tmen-.5) + scale(likelihoodtrans) + (1 | ID), data = al2))
+  effs6 <- fixef(lmer(warmth ~ Condition*nonconforming*I(tmen-.5) + scale(likelihoodtrans) + scale(likelihoodgay) + (1 | ID), data = al2))
+  effs7 <- fixef(lmer(warmth ~ Condition_Straight*nonconforming*I(tmen-.5) + scale(likelihoodgay) + (1 | ID), data = al2))
+  effs8 <- fixef(lmer(warmth ~ Condition_Straight*nonconforming*I(tmen-.5) + scale(likelihoodtrans) + scale(likelihoodgay) + (1 | ID), data = al2))
+  effs9 <- fixef(lmer(warmth ~ Condition_Gay*nonconforming*I(tmen-.5) + (1 | ID), data = al2))
+  effs10 <- fixef(lmer(warmth ~ Condition_Gay*nonconforming*I(tmen-.5) + scale(likelihoodtrans) + (1 | ID), data = al2))
+  effs11 <- fixef(lmer(warmth ~ Condition*nonconforming*I(tmen-.5) + scale(stereotypical, scale = F)*nonconforming + (1 | ID), data = al2))
+  effs12 <- fixef(lmer(warmth ~ Condition_Straight*nonconforming*I(tmen-.5) + scale(stereotypical, scale = F)*nonconforming + (1 | ID), data = al2))
+  effs13 <- fixef(lmer(warmth ~ Condition_Gay*nonconforming*I(tmen-.5) + scale(stereotypical, scale = F)*nonconforming + (1 | ID), data = al2))
+c(effs1["ConditionStraight:nonconforming"]-effs2["ConditionStraight:nonconforming"], 
+  effs1["ConditionStraight:nonconforming"]-effs4["ConditionStraight:nonconforming"],
+  effs3["Condition_StraightGay:nonconforming"]-effs5["Condition_StraightGay:nonconforming"],
+  effs1["ConditionGay:nonconforming"]-effs4["ConditionGay:nonconforming"],
+  effs1["ConditionTrans:nonconforming"]-effs2["ConditionTrans:nonconforming"],
+  effs3["Condition_StraightTrans:nonconforming"]-effs7["Condition_StraightTrans:nonconforming"],
+  effs1["ConditionStraight:nonconforming"]-effs6["ConditionStraight:nonconforming"],
+  effs1["nonconforming"]-effs2["nonconforming"],
+  effs1["nonconforming"]-effs4["nonconforming"],
+  effs1["nonconforming"]-effs6["nonconforming"],
+  effs3["nonconforming"]-effs7["nonconforming"],
+  effs3["nonconforming"]-effs5["nonconforming"],
+  effs3["nonconforming"]-effs8["nonconforming"],
+  effs9["nonconforming"]-effs10["nonconforming"],
+  effs1["ConditionStraight:nonconforming"]-effs11["ConditionStraight:nonconforming"],
+  effs1["ConditionGay:nonconforming"]-effs11["ConditionGay:nonconforming"],
+  effs3["Condition_StraightGay:nonconforming"]-effs12["Condition_StraightGay:nonconforming"],
+  effs1["nonconforming"]-effs11["nonconforming"],
+  effs3["nonconforming"]-effs12["nonconforming"],
+  effs9["nonconforming"]-effs13["nonconforming"]
+  )
+}
+stopCluster(cl)
+colnames(mat) <- matcolnames
+all_results <- data.frame("Mean"=apply(mat, 2, mean),
+"Low"=apply(mat, 2, quantile, .025, na.rm=T),
+"High"=apply(mat, 2, quantile, .975, na.rm=T))
+all_results$sig <- (all_results$Low<0 & all_results$High > 0)==FALSE
+all_results
+
+if(nrow(all_results)>=1e4) {
+  write.csv(all_results, file="/Users/chadmiller/OneDrive/Research/Gender Nonconformity/allmediationresults.csv")
+}
+
+```
