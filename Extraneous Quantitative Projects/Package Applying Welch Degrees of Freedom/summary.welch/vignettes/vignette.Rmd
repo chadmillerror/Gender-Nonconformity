@@ -1,0 +1,50 @@
+---
+title: "vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(summary.welch)
+y <- rnorm(20)
+x1 <- rbinom(20, 1, .7)
+x2 <- rbinom(20, 1, .7)
+z <- rnorm(20)
+```
+
+# summary.welch
+When using summary.welch, for every predictor, you must specify all binary predictors that it interacts with in your model. 
+
+For example, if this is your model:
+
+```{r}
+f <- y~x1*z + x2*z
+f
+```
+
+x1 interacts with z (not binary, so you aren't required to specify it), z interacts with x1 and x2 (both are binary, so both must be specified), and x2 interacts with z (not binary, so you aren't required to specify it).
+
+Specify interacting partners like this:
+
+```{r}
+preds_interacting <- list(x1="z", 
+     z=c("x1","x2"),
+     x2="z")
+preds_interacting
+```
+
+If you do not specify the names of the predictors in your list, summary.welch will assume you are going by model.frame's order
+```{r}
+mod <- lm(f)
+colnames(model.frame(f))[-1]
+```

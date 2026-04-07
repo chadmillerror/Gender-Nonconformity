@@ -1,0 +1,109 @@
+* using log directory ‘/Users/chadmiller/Library/CloudStorage/OneDrive-Personal/Classes/Informatics/summary.welch.Rcheck’
+* using R version 4.4.0 (2024-04-24)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 14.0.0 (clang-1400.0.29.202)
+    GNU Fortran (GCC) 12.2.0
+* running under: macOS Sonoma 14.5
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘summary.welch/DESCRIPTION’ ... OK
+* this is package ‘summary.welch’ version ‘0.0.0.9000’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking serialization versions ... OK
+* checking whether package ‘summary.welch’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... OK
+* checking ‘build’ directory ... OK
+* checking DESCRIPTION meta-information ... NOTE
+Malformed Title field: should not end in a period.
+Non-standard license specification:
+  `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+  license
+Standardizable: FALSE
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... WARNING
+Unexported object imported by a ':::' call: ‘stats:::qr.lm’
+  See the note in ?`:::` about the use of this operator.
+  Including base/recommended package(s):
+  ‘stats’
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+summary_welch: no visible global function definition for ‘coef’
+summary_welch: no visible global function definition for ‘var’
+summary_welch: no visible global function definition for ‘model.matrix’
+summary_welch: no visible global function definition for ‘model.frame’
+summary_welch: no visible global function definition for ‘pt’
+welch_df: no visible global function definition for ‘na.omit’
+welch_df: no visible global function definition for ‘var’
+welch_df: no visible global function definition for ‘sd’
+Undefined global functions or variables:
+  coef model.frame model.matrix na.omit pt sd var
+Consider adding
+  importFrom("stats", "coef", "model.frame", "model.matrix", "na.omit",
+             "pt", "sd", "var")
+to your NAMESPACE file.
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘csums’ ‘halloween’ ‘rsums’
+Undocumented data sets:
+  ‘halloween’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Undocumented arguments in Rd file 'summary_welch.Rd'
+  ‘object’ ‘correlation’ ‘symbolic.cor’ ‘...’
+Documented arguments not in \usage in Rd file 'summary_welch.Rd':
+  ‘y’ ‘x’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking installed files from ‘inst/doc’ ... OK
+* checking files in ‘vignettes’ ... OK
+* checking examples ... OK
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... OK
+  Running ‘testthat.R’
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... OK
+* checking re-building of vignette outputs ... OK
+* checking for non-standard things in the check directory ... OK
+* checking for detritus in the temp directory ... OK
+* DONE
+Status: 3 WARNINGs, 2 NOTEs

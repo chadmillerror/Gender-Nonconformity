@@ -1,0 +1,4 @@
+summary_welch           Calculate Welch–Satterthwaite Equation Degrees
+                        of Freedom
+welch_df                Summary Using Welch–Satterthwaite Equation
+                        Degrees of Freedom
